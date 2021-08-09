@@ -104,8 +104,8 @@ class BasicClient:
         """
         if self.writable_buffer != "":
             logger.info("Sending : " + self.writable_buffer)
-            writable_socket.sendall(self.writable_buffer)
-            logger.success("Sent successfully")
+            writable_socket.sendall(self.writable_buffer.encode("utf-8"))
+            logger.success("Sent successfully : " + self.writable_buffer)
             self.writable_buffer = ""
 
     def process_readable_buffer(self):
@@ -120,7 +120,7 @@ class BasicClient:
         if first_brace_index >= 0 \
             and last_brace_index >= 0 \
             and first_brace_index < last_brace_index:
-            
+
             select_requests = self.readable_buffer[first_brace_index:last_brace_index + 1]
             requests_list = select_requests.split("\n")
 
@@ -140,14 +140,18 @@ class BasicClient:
 
         :arg message: message to send
         """
-        self.writable_buffer = self.writable_buffer + message + "\n"
+        if self.writable_buffer != "":
+            self.writable_buffer += "\n"
+        self.writable_buffer = self.writable_buffer + message
 
             
-    def on_request_receive(self, request):
+    def on_request_receive(self, request_string):
         """
         When the request is received
+
+        :arg request_string: request like a string
         """
-        logger.trace("New request : ", request)
+        logger.trace("New request : ", request_string)
 
         #Compute fps
         self.nbr_frame_for_fps += 1
