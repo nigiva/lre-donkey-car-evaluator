@@ -80,7 +80,6 @@ class BasicClient:
                 
             for writable_socket in writable_sockets_list:
                 self.write_message_with_socket(writable_socket)
-                #TODO create a function to add to the buffer some message
  
     def read_message_with_socket(self, readable_socket):
         """
@@ -88,10 +87,14 @@ class BasicClient:
 
         :arg readable_socket: The readable socket
         """
-        message = readable_socket.recv(self.buffer_message_size_read)
-        message = message.decode("utf-8")
+        try:
+            message = readable_socket.recv(self.buffer_message_size_read)
+            message = message.decode("utf-8")
+            self.readable_buffer += message
 
-        self.readable_buffer += message
+        except ConnectionAbortedError:
+            logger.warn("Socket connection aborted")
+            self.connected = False
 
     def write_message_with_socket(self, writable_socket):
         """
