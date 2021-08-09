@@ -10,16 +10,16 @@ class BasicClient:
                        port = 8080,
                        poll_socket_sleep_sec = 0.016,
                        buffer_message_size_read = 16 * 1024,
-                       deltatime_to_compute_fps = 2.0
+                       deltatime_to_compute_fps = 5.0
                        ):
         """
         Basic Client on the network 
         
-        :arg host: host to connect to a server like ip address with string
-        :arg port: port to connect to a server with int
-        :arg poll_socket_sleep_sec: time to sleep before polling socket
-        :arg buffer_message_size_read: number of bits to read into the socket
-        :arg delatime_to_compute_fps: deltatime between computation of the FPS
+        :param host: host to connect to a server like ip address with string
+        :param port: port to connect to a server with int
+        :param poll_socket_sleep_sec: time to sleep before polling socket
+        :param buffer_message_size_read: number of bits to read into the socket
+        :param delatime_to_compute_fps: deltatime between computation of the FPS
         """
         self.host = host
         self.port = port
@@ -85,7 +85,7 @@ class BasicClient:
         """
         Fill the readable buffer with the message received from the server
 
-        :arg readable_socket: The readable socket
+        :param readable_socket: The readable socket
         """
         try:
             message = readable_socket.recv(self.buffer_message_size_read)
@@ -100,10 +100,10 @@ class BasicClient:
         """
         Send the writable buffer to the server
 
-        :arg writable_socket: The writable socket
+        :param writable_socket: The writable socket
         """
         if self.writable_buffer != "":
-            logger.info("Sending : " + self.writable_buffer)
+            logger.debug("Sending : " + self.writable_buffer)
             writable_socket.sendall(self.writable_buffer.encode("utf-8"))
             logger.success("Sent successfully : " + self.writable_buffer)
             self.writable_buffer = ""
@@ -138,7 +138,7 @@ class BasicClient:
         Send a message 
         Add `\n` at the end of the message and add all to the writable buffer.
 
-        :arg message: message to send
+        :param message: message to send
         """
         if self.writable_buffer != "":
             self.writable_buffer += "\n"
@@ -149,7 +149,7 @@ class BasicClient:
         """
         When the request is received
 
-        :arg request_string: request like a string
+        :param request_string: request like a string
         """
         logger.trace("New request : ", request_string)
 
