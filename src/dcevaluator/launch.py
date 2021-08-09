@@ -5,7 +5,7 @@ from loguru import logger
 from dcevaluator.communication.basic_client import BasicClient
 
 logger.remove()
-logger.add(sys.stdout, level="TRACE")
+logger.add(sys.stdout, level="DEBUG")
 
 @begin.start
 def run(name = "No Name", host = "127.0.0.1", port = "9091"):

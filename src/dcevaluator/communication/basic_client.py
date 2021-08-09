@@ -6,24 +6,36 @@ from threading import Thread
 import time
 
 class BasicClient:
-    def __init__(self, host = "127.0.0.1", port = 8080):
+    def __init__(self, host = "127.0.0.1", 
+                       port = 8080,
+                       poll_socket_sleep_sec = 0.016,
+                       buffer_message_size_read = 16 * 1024,
+                       deltatime_to_compute_fps = 2.0
+                       ):
         """
         Basic Client on the network 
         
         :arg host: host to connect to a server like ip address with string
         :arg port: port to connect to a server with int
+        :arg poll_socket_sleep_sec: time to sleep before polling socket
+        :arg buffer_message_size_read: number of bits to read into the socket
+        :arg delatime_to_compute_fps: deltatime between computation of the FPS
         """
         self.host = host
         self.port = port
 
-        self.poll_socket_sleep_sec = 0.016
-        self.buffer_message_size_read = 10
+        self.poll_socket_sleep_sec = poll_socket_sleep_sec
+        self.buffer_message_size_read = buffer_message_size_read
+        self.deltatime_to_compute_fps = deltatime_to_compute_fps
 
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.connected = False
 
         self.readable_buffer = ""
         self.writable_buffer = ""
+
+        self.nbr_frame_for_fps = 0
+        self.first_frame_time = time.time()
     
     def connect(self):
         """
@@ -44,7 +56,7 @@ class BasicClient:
     
     def loop(self):
         """
-        Process the sending or receiving message with the server
+        Process the message sending or receiving with the server
         Works until the connection to the server is lost
         """
         # Check if the client is connected to a server
@@ -64,12 +76,12 @@ class BasicClient:
             #We get a single socket in the list (or an empty list sometimes)
             for readable_socket in readable_sockets_list:
                 self.read_message_with_socket(readable_socket)
-                #TODO Process the current readable buffer
+                self.process_readable_buffer()
                 
             for writable_socket in writable_sockets_list:
                 self.write_message_with_socket(writable_socket)
                 #TODO create a function to add to the buffer some message
-
+ 
     def read_message_with_socket(self, readable_socket):
         """
         Fill the readable buffer with the message received from the server
@@ -78,10 +90,8 @@ class BasicClient:
         """
         message = readable_socket.recv(self.buffer_message_size_read)
         message = message.decode("utf-8")
-        logger.trace(str(message))
 
         self.readable_buffer += message
-        logger.trace(str(self.readable_buffer))
 
     def write_message_with_socket(self, writable_socket):
         """
@@ -95,3 +105,52 @@ class BasicClient:
             logger.success("Sent successfully")
             self.writable_buffer = ""
 
+    def process_readable_buffer(self):
+        """
+        Process the readable buffer in catching the complete requests
+        i.e. select the message between two braces
+        """
+        first_brace_index = self.readable_buffer.find("{")
+        last_brace_index = self.readable_buffer.rfind("}")
+
+        #If we catch a complete request
+        if first_brace_index >= 0 \
+            and last_brace_index >= 0 \
+            and first_brace_index < last_brace_index:
+            
+            select_requests = self.readable_buffer[first_brace_index:last_brace_index + 1]
+            requests_list = select_requests.split("\n")
+
+            #remove the selected resquests from the buffer
+            self.readable_buffer = self.readable_buffer[last_brace_index + 1:]
+            #Now, the current buffer contains the rest of the messages
+            #which will process when the message is received completely (with end brace)
+
+            for request in requests_list:
+                self.on_request_receive(request)
+            
+    
+    def send_message(self, message):
+        """
+        Send a message 
+        Add `\n` at the end of the message and add all to the writable buffer.
+
+        :arg message: message to send
+        """
+        self.writable_buffer = self.writable_buffer + message + "\n"
+
+            
+    def on_request_receive(self, request):
+        """
+        When the request is received
+        """
+        logger.trace("New request : ", request)
+
+        #Compute fps
+        self.nbr_frame_for_fps += 1
+        current_time = time.time()
+        delta = current_time - self.first_frame_time
+        if delta > self.deltatime_to_compute_fps:
+            logger.debug("FPS : " + str(self.nbr_frame_for_fps / delta))
+            self.nbr_frame_for_fps = 0
+            self.first_frame_time = time.time()
