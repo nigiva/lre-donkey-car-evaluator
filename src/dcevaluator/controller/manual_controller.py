@@ -29,8 +29,8 @@ class ManualController:
         while self.running:
             time.sleep(self.delay_before_check)
             if self.event_handler.car_is_ready:
-                if not self.event_handler.car_is_driving and self.hardware.get_start_car():
-                    self.event_handler.car_is_driving = True
+                if not self.event_handler.car_controller_is_ready and self.hardware.get_start_car():
+                    self.event_handler.car_controller_is_ready = True
 
                 if self.event_handler.car_is_driving:
                     angle = self.hardware.get_angle_controller()

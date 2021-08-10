@@ -6,6 +6,7 @@ class EventHandler:
         self.car_is_ready = False
         self.car_is_driving = False
         self.car_is_leaving = False
+        self.car_controller_is_ready = False
 
         self.last_node = -1
         self.last_time_on_last_node = -1
