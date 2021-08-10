@@ -8,6 +8,8 @@ class ManualController:
 
         :param client: Client instance
         :param hardware: Hardware instance
+        :param event_handler: Event Handler instance
+        :param delay_before_check: Delay between each hardware status check
         """
         self.client = client
         self.hardware = hardware
@@ -21,6 +23,9 @@ class ManualController:
         self.controller_thread.start()
 
     def loop(self):
+        """
+        Process request from the hardware
+        """
         while self.running:
             time.sleep(self.delay_before_check)
             if self.event_handler.car_is_ready:

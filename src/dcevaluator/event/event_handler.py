@@ -24,13 +24,21 @@ class EventHandler:
         self.on_car_leaving_road = self.unimplemented_behavior("on_car_leaving_road")
         self.on_timeout = self.unimplemented_behavior("on_timeout")
 
-    def unimplemented_behavior(self, *gargs, **gkwargs):       
+    def unimplemented_behavior(self, *gargs, **gkwargs):
+        """
+        Substitution function when a behavior has not been defined
+
+        :return: function which take (*args, **kwargs)
+        """       
         def unimplemented_function(*args, **kwargs):
             logger.trace("Unimplemented behavior : " + str(gargs))
         
         return unimplemented_function
     
     def reset_state(self):
+        """
+        Reset state of all values
+        """
         self.car_is_ready = False
         self.car_is_leaving = False
 
@@ -41,6 +49,9 @@ class EventHandler:
         self.last_time_on_last_turn = 0
     
     def init_turn_stat(self):
+        """
+        Initialize all stats for the "turn"
+        """
         t = time.time()
         self.first_time_on_first_turn = t
         self.last_time_on_last_turn = t

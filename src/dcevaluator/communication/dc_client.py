@@ -12,14 +12,28 @@ class DonkeyCarClient(BasicClient):
                        poll_socket_sleep_sec = 0.016,
                        buffer_message_size_read = 16 * 1024,
                        deltatime_to_compute_fps = 5.0,
-                       marge_before_car_leaving_road = 6.0,
+                       margin_before_car_leaving_road = 6.0,
                        deltatime_min_between_turns = 10.0,
                        node_after_start_detection_turn = 105,
                        deltatime_max_between_nodes = 5
                        ):
+        """
+        Donkey Car Client
+
+        :param event_handler: Event Handler instance
+        :param host: host to connect to a server like ip address with string
+        :param port: port to connect to a server with int
+        :param poll_socket_sleep_sec: time to sleep before polling socket
+        :param buffer_message_size_read: number of bits to read into the socket
+        :param delatime_to_compute_fps: deltatime between computation of the FPS
+        :param margin_before_car_leaving_road: distance from the center of the road at the active node to the car. Maximum value from which it can be considered that the car has left the road
+        :param deltatime_min_between_turns: minimum time interval between two turns from which we can count a turn (incrementation)
+        :param node_after_start_detection_turn: node from which we can possibly count a turn. (To avoid false positives on the rest of the road)
+        :param deltatime_max_between_nodes: Maximum time interval to travel the distance between two nodes. If the vehicle takes too long, it is probably stuck somewhere but not far enough off the road to be considered 'off road'.
+        """
         super().__init__(host, port, poll_socket_sleep_sec, buffer_message_size_read, deltatime_to_compute_fps)
         self.event_handler = event_handler
-        self.marge_before_car_leaving_road = marge_before_car_leaving_road
+        self.margin_before_car_leaving_road = margin_before_car_leaving_road
         self.deltatime_min_between_turns = deltatime_min_between_turns
         self.node_after_start_detection_turn = node_after_start_detection_turn
         self.deltatime_max_between_nodes = deltatime_max_between_nodes
@@ -48,80 +62,150 @@ class DonkeyCarClient(BasicClient):
     #############
 
     def on_scene_selection_ready(self, request):
+        """
+        When a the scene selection is ready
+
+        :param request: a dict representing the request (telemetry)
+        """
         self.event_handler.on_scene_selection_ready(request)
     
     def on_scene_loaded(self, request):
+        """
+        When a the scene is loaded
+
+        :param request: a dict representing the request (telemetry)
+        """
         self.event_handler.on_scene_loaded(request)
 
     def on_car_loaded(self, request):
+        """
+        When a car is loaded
+
+        :param request: a dict representing the request (telemetry)
+        """
         self.event_handler.on_car_loaded(request)
         self.event_handler.car_is_ready = True
 
     def on_telemetry(self, request):
+        """
+        When a the telemetry request is received
+
+        :param request: a dict representing the request (telemetry)
+        """
         self.event_handler.on_telemetry(request)
+
+        # Distance from the center of the road at the active node to the car
         distance_center = request["cte"]
         active_node = request["activeNode"]
         current_turn = self.event_handler.turn
-        
-        if self.marge_before_car_leaving_road < abs(distance_center) < 2 * self.marge_before_car_leaving_road and not self.event_handler.car_is_leaving:
+
+        # If the car goes too far off the road (limit < distance from the car) then consider it a "run off the road"
+        # Special case: When the car is reset, there may be a "distance" with an excessive value (above 100) for a short time. Therefore, a high detection limit of 2 times the low limit has been arbitrarily set.        
+        if self.margin_before_car_leaving_road < abs(distance_center) < 2 * self.margin_before_car_leaving_road and not self.event_handler.car_is_leaving:
             self.on_car_leaving_road(request)
+    
         if not self.event_handler.car_is_leaving and self.event_handler.car_is_driving:
             logger.debug("active_node : " + str(active_node) + " / distance_center (cte) : " + str(distance_center) + " / turn : " + str(current_turn))
             logger.debug("last node : " + str(self.event_handler.last_node))
+
+            # When resetting a car, its first active node can be either node=0 or node=112
+            # In the case of node=0 or maximum 1, we want to initialize the timers used for the turn counter statistics.
+            # The default values of the timers have been initialized to 0 because their value is only known at Runtime
+            # It is from this time frame that we will calculate the delays and other statistics
             if self.event_handler.first_time_on_first_turn == 0 and active_node <= 1:
                 self.event_handler.init_turn_stat()
+            
+            # If the car passes the "finish" line (count a turn)
             if self.event_handler.last_node > self.node_after_start_detection_turn and active_node < self.event_handler.last_node:
-                logger.debug(str((self.event_handler.first_time_on_first_turn, self.event_handler.last_time_on_last_turn)))
+                logger.debug("first_time_on_first_turn, last_time_on_last_turn = " + str((self.event_handler.first_time_on_first_turn, self.event_handler.last_time_on_last_turn)))
+                
+                # When resetting a car, its first active node can be either node=0 or node=112
+                # In the case of node=node_after_start_detection_turn or maximum MAX_NODE, we want to initialize the timers used for the turn counter statistics.
+                # The default values of the timers have been initialized to 0 because their value is only known at Runtime
+                # It is from this time frame that we will calculate the delays and other statistics
                 if self.event_handler.first_time_on_first_turn == 0:
                     self.event_handler.init_turn_stat()
+
                 elif time.time() - self.event_handler.last_time_on_last_turn > self.deltatime_min_between_turns:
-                    logger.info("active_node : " + str(active_node) + " / distance_center (cte) : " + str(distance_center))
-                    self.event_handler.turn += 1
+                    # Otherwise, if the turn can be counted because it has exceeded the minimum freezing time of the counter (to prevent the counter from shooting up for a short time) 
                     self.each_turn(request)
+                
+                # We update the statistics of the last node
                 self.event_handler.last_node = active_node
                 self.event_handler.last_time_on_last_node = time.time()
+            
+            # If we advance by one or more nodes compared to the last time
             if active_node > self.event_handler.last_node:
-                self.event_handler.last_node = active_node
-                self.event_handler.last_time_on_last_node = time.time()
                 self.each_node(request)
             
-            if self.event_handler.car_is_driving and self.event_handler.last_time_on_last_node != -1 \
+            # If the vehicle takes too long to reach the next node, it is probably stuck somewhere but not far enough off the road to be considered 'off road'.
+            if self.event_handler.car_is_driving \
+                and self.event_handler.last_time_on_last_node != -1 \
                 and time.time() - self.event_handler.last_time_on_last_node > self.deltatime_max_between_nodes:
-                logger.error(str((self.event_handler.car_is_driving, self.event_handler.last_time_on_last_node, time.time() - self.event_handler.last_time_on_last_node)))
+                
                 self.on_timeout()
             
 
     def on_exit_scene(self):
+        """
+        When scene is exited
+        """
         self.event_handler.on_exit_scene()
 
     def on_quit_app(self):
+        """
+        When the app is quit
+        """
         self.event_handler.on_quit_app()
 
     def each_turn(self, request):
-        turn = self.event_handler.turn
+        """
+        At each turn
+
+        :param request: a dict representing the request (telemetry)
+        """
+        self.event_handler.turn += 1
+
         self.event_handler.last_time_on_last_turn = time.time()
         delta = self.event_handler.last_time_on_last_turn - self.event_handler.first_time_on_first_turn
-        logger.success("Turn = " +  str(turn) + " (deltatime = " + str(delta) + " secondes)")
+
+        logger.success("Turn = " +  str(self.event_handler.turn) + " (deltatime = " + str(delta) + " sec)")
         self.event_handler.each_turn(request)
 
     def each_node(self, request):
+        """
+        At each node
+
+        :param request: a dict representing the request (telemetry)
+        """
+        # We update the statistics of the last node
+        self.event_handler.last_node = request["activeNode"]
+        self.event_handler.last_time_on_last_node = time.time()
+
         self.event_handler.each_node(request)
 
     def on_car_leaving_road(self, request):
-        distance_center = request["cte"]
-        active_node = request["activeNode"]
+        """
+        When a car leaves the road
 
-        logger.info("active_node : " + str(active_node) + " / distance_center (cte) : " + str(distance_center))
+        :param request: a dict representing the request (telemetry)
+        """
+
+        logger.error("active_node : " + str(request["activeNode"]) + " / distance_center (cte) : " + str(request["cte"]))
         logger.error("Car is leaving the road !")
 
         self.event_handler.on_car_leaving_road(request)
         self.event_handler.car_is_leaving = True
-        self.send_reset_car_request()
+        #self.send_reset_car_request()##TODO remove line
 
     def on_timeout(self):
+        """
+        At the timeout
+        """
         logger.error("Timeout to reach the next node ! (delay = " + str(self.deltatime_max_between_nodes) + " sec)")
         self.event_handler.on_timeout()
-        self.send_reset_car_request()
+        self.event_handler.car_is_leaving = True
+        #self.send_reset_car_request()##TODO remove line
         
 
     ####################

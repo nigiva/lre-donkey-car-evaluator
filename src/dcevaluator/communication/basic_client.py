@@ -156,7 +156,7 @@ class BasicClient:
         """
         logger.trace("New request : ", request_string)
 
-        #Compute fps
+        #Compute FPS
         self.nbr_frame_for_fps += 1
         current_time = time.time()
         delta = current_time - self.first_frame_time
