@@ -1,13 +1,22 @@
 from loguru import logger
+import time
 from dcevaluator.communication.basic_client import BasicClient
 import json
 import re
 
 class DonkeyCarClient(BasicClient):
 
-    def __init__(self, event_handler, host = "127.0.0.1", port = 9091):
-        super().__init__(host, port)
+    def __init__(self, event_handler, 
+                       host = "127.0.0.1", 
+                       port = 9091,
+                       poll_socket_sleep_sec = 0.016,
+                       buffer_message_size_read = 16 * 1024,
+                       deltatime_to_compute_fps = 5.0,
+                       marge_before_car_leaving_road = 6.0
+                       ):
+        super().__init__(host, port, poll_socket_sleep_sec, buffer_message_size_read, deltatime_to_compute_fps)
         self.event_handler = event_handler
+        self.marge_before_car_leaving_road = marge_before_car_leaving_road
 
     def on_request_receive(self, request_string):
         super().on_request_receive(request_string)
@@ -44,22 +53,45 @@ class DonkeyCarClient(BasicClient):
 
     def on_telemetry(self, request):
         self.event_handler.on_telemetry(request)
-        logger.info("Node : " + str(request["activeNode"]) + " / distance2center (cte) : " + str(request["cte"]))
+        distance_center = request["cte"]
+        active_node = request["activeNode"]
+        logger.info("active_node : " + str(active_node) + " / distance_center (cte) : " + str(distance_center))
 
-    def on_exit_scene(self, request):
-        self.event_handler.on_exit_scene(request)
+        if abs(distance_center) > self.marge_before_car_leaving_road:
+            self.on_car_leaving_road(request)
+        if not self.event_handler.car_is_leaving:
+            if self.event_handler.last_node > 110 and active_node < self.event_handler.last_node:
+                self.event_handler.turn += 1
+                self.event_handler.last_node = active_node
+                self.each_turn(request)
+            if active_node > self.event_handler.last_node:
+                self.event_handler.last_node = active_node
+                self.each_node(request)
+            
 
-    def on_quit_app(self, request):
-        self.event_handler.on_quit_app(request)
+    def on_exit_scene(self):
+        self.event_handler.on_exit_scene()
+
+    def on_quit_app(self):
+        self.event_handler.on_quit_app()
 
     def each_turn(self, request):
+        turn = self.event_handler.turn
+        t = time.time()
+        if turn == 0:
+            self.event_handler.first_time_on_first_turn = t
+        self.event_handler.last_time_on_last_turn = t
+        delta = self.event_handler.last_time_on_last_turn - self.event_handler.first_time_on_first_turn
+        logger.success("Turn = " +  str(turn) + " (deltatime = " + str(delta) + " secondes)")
         self.event_handler.each_turn(request)
 
     def each_node(self, request):
         self.event_handler.each_node(request)
 
     def on_car_leaving_road(self, request):
+        logger.error("Car is leaving the road !")
         self.event_handler.on_car_leaving_road(request)
+        self.event_handler.car_is_leaving = True
 
 
     ####################
@@ -186,6 +218,7 @@ class DonkeyCarClient(BasicClient):
         request = dict()
         request["msg_type"] = "exit_scene"
         self.send_message(json.dumps(request))
+        self.on_exit_scene()
 
     def send_quit_app_request(self):
         """
@@ -193,7 +226,12 @@ class DonkeyCarClient(BasicClient):
         """
         request = dict()
         request["msg_type"] = "quit_app"
-        self.send_message(json.dumps(request))
+        self.send_now(json.dumps(request))
+        self.on_quit_app()
+        self.stop()
+    
+    def stop(self):
+        self.connected = False
 
 
     #############

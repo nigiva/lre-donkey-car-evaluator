@@ -3,6 +3,12 @@ from loguru import logger
 class EventHandler:
     def __init__(self):
         self.car_is_ready = False
+        self.car_is_leaving = False
+
+        self.last_node = -1
+        self.turn = -1
+        self.first_time_on_first_turn = 0
+        self.last_time_on_last_turn = 0
         
         self.on_scene_selection_ready = self.unimplemented_behavior("on_scene_selection_ready")
         self.on_scene_loaded = self.unimplemented_behavior("on_scene_loaded")

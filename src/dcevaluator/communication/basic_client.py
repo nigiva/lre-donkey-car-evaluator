@@ -73,7 +73,6 @@ class BasicClient:
 
             socket_list_to_talk = [ self.socket ]
             readable_sockets_list, writable_sockets_list, exceptional_sockets_list = select.select(socket_list_to_talk, socket_list_to_talk, socket_list_to_talk)
-
             #We get a single socket in the list (or an empty list sometimes)
             for readable_socket in readable_sockets_list:
                 self.read_message_with_socket(readable_socket)
@@ -144,6 +143,9 @@ class BasicClient:
         if self.writable_buffer != "":
             self.writable_buffer += "\n"
         self.writable_buffer = self.writable_buffer + message
+    
+    def send_now(self, message):
+        self.socket.send(message.encode("utf-8"))
 
             
     def on_request_receive(self, request_string):
