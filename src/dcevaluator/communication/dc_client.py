@@ -5,34 +5,67 @@ import re
 
 class DonkeyCarClient(BasicClient):
 
-    @staticmethod
-    def replace_float_notation(string):
-        """
-        Replace unity float notation for languages like
-        French or German that use comma instead of dot.
-        This convert the json sent by Unity to a valid one.
-        Ex: "test": 1,2, "key": 2 -> "test": 1.2, "key": 2
-
-        :param string: (str) The incorrect json string
-        :return: (str) Valid JSON string
-        """
-        regex_french_notation = r'"[a-zA-Z_]+":(?P<num>[0-9,E-]+),'
-        regex_end = r'"[a-zA-Z_]+":(?P<num>[0-9,E-]+)}'
-
-        for regex in [regex_french_notation, regex_end]:
-            matches = re.finditer(regex, string, re.MULTILINE)
-
-            for match in matches:
-                num = match.group('num').replace(',', '.')
-                string = string.replace(match.group('num'), num)
-        return string
+    def __init__(self, event_handler, host = "127.0.0.1", port = 9091):
+        super().__init__(host, port)
+        self.event_handler = event_handler
 
     def on_request_receive(self, request_string):
         super().on_request_receive(request_string)
+
         request = json.loads(self.replace_float_notation(request_string))
-        if "msg_type" in request and request["msg_type"] != "telemetry":
-            logger.info(request_string)
+
+        if "msg_type" in request:
+            msg_type = request["msg_type"]
+            if msg_type == "scene_selection_ready":
+                self.on_scene_selection_ready(request)
+            elif msg_type == "scene_loaded":
+                self.on_scene_loaded(request)
+            elif msg_type == "car_loaded":
+                self.on_car_loaded(request)
+            elif request["msg_type"] == "telemetry":
+                self.on_telemetry(request)
+            else:
+                logger.info(request_string)
+
+
+    #############
+    ### Event ###
+    #############
+
+    def on_scene_selection_ready(self, request):
+        self.event_handler.on_scene_selection_ready(request)
     
+    def on_scene_loaded(self, request):
+        self.event_handler.on_scene_loaded(request)
+
+    def on_car_loaded(self, request):
+        self.event_handler.on_car_loaded(request)
+        self.event_handler.car_is_ready = True
+
+    def on_telemetry(self, request):
+        self.event_handler.on_telemetry(request)
+        logger.info("Node : " + str(request["activeNode"]) + " / distance2center (cte) : " + str(request["cte"]))
+
+    def on_exit_scene(self, request):
+        self.event_handler.on_exit_scene(request)
+
+    def on_quit_app(self, request):
+        self.event_handler.on_quit_app(request)
+
+    def each_turn(self, request):
+        self.event_handler.each_turn(request)
+
+    def each_node(self, request):
+        self.event_handler.each_node(request)
+
+    def on_car_leaving_road(self, request):
+        self.event_handler.on_car_leaving_road(request)
+
+
+    ####################
+    ### Send request ###
+    ####################
+
     def send_get_protocol_version_request(self):
         """
         Ask for the version of the protocol. Will help know when changes are made to these messages.
@@ -126,7 +159,7 @@ class DonkeyCarClient(BasicClient):
         request["steering"] = str(angle)
         request["throttle"] = str(throttle)
         request["brake"] = str(brake)
-        self.send_now(json.dumps(request))
+        self.send_message(json.dumps(request))
     
     def send_reset_car_request(self):
         """
@@ -161,3 +194,30 @@ class DonkeyCarClient(BasicClient):
         request = dict()
         request["msg_type"] = "quit_app"
         self.send_message(json.dumps(request))
+
+
+    #############
+    ### Utils ###
+    #############
+
+    @staticmethod
+    def replace_float_notation(string):
+        """
+        Replace unity float notation for languages like
+        French or German that use comma instead of dot.
+        This convert the json sent by Unity to a valid one.
+        Ex: "test": 1,2, "key": 2 -> "test": 1.2, "key": 2
+
+        :param string: (str) The incorrect json string
+        :return: (str) Valid JSON string
+        """
+        regex_french_notation = r'"[a-zA-Z_]+":(?P<num>[0-9,E-]+),'
+        regex_end = r'"[a-zA-Z_]+":(?P<num>[0-9,E-]+)}'
+
+        for regex in [regex_french_notation, regex_end]:
+            matches = re.finditer(regex, string, re.MULTILINE)
+
+            for match in matches:
+                num = match.group('num').replace(',', '.')
+                string = string.replace(match.group('num'), num)
+        return string

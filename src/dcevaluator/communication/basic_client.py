@@ -48,7 +48,8 @@ class BasicClient:
             self.connected = True
         except ConnectionRefusedError as e:
             self.connected = False
-            logger.critical("Could not connect to server. Is it running? If you specified 'remote', then you must start it manually. : \n" + str(e))
+            logger.critical("Could not connect to server. Is it running? If you specified 'remote', then you must start it manually.")
+            raise RuntimeError(e)
         
         #Launch the processing loop to interpret in real time the message sent from the server
         self.loop_thread = Thread(target=self.loop)
@@ -105,7 +106,7 @@ class BasicClient:
         if self.writable_buffer != "":
             logger.debug("Sending : " + self.writable_buffer)
             writable_socket.sendall(self.writable_buffer.encode("utf-8"))
-            logger.success("Sent successfully : " + self.writable_buffer)
+            logger.debug("Sent successfully : " + self.writable_buffer)
             self.writable_buffer = ""
 
     def process_readable_buffer(self):
