@@ -103,9 +103,9 @@ class BasicClient:
         :param writable_socket: The writable socket
         """
         if self.writable_buffer != "":
-            logger.debug("Sending : " + self.writable_buffer)
+            logger.trace("Sending : " + self.writable_buffer)
             writable_socket.sendall(self.writable_buffer.encode("utf-8"))
-            logger.debug("Sent successfully : " + self.writable_buffer)
+            logger.trace("Sent successfully : " + self.writable_buffer)
             self.writable_buffer = ""
 
     def process_readable_buffer(self):

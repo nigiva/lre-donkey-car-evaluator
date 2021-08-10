@@ -6,7 +6,8 @@ class EventHandler:
         self.car_is_leaving = False
 
         self.last_node = -1
-        self.turn = -1
+        self.last_time_last_node = -1
+        self.turn = 0
         self.first_time_on_first_turn = 0
         self.last_time_on_last_turn = 0
         
@@ -19,11 +20,20 @@ class EventHandler:
         self.each_turn = self.unimplemented_behavior("each_turn")
         self.each_node = self.unimplemented_behavior("each_node")
         self.on_car_leaving_road = self.unimplemented_behavior("on_car_leaving_road")
+        self.on_timeout = self.unimplemented_behavior("on_timeout")
 
-    def unimplemented_behavior(self, *args, **kwargs):
-        logger.debug("Unimplemented behavior : " + str(args))
-        
+    def unimplemented_behavior(self, *gargs, **gkwargs):       
         def unimplemented_function(*args, **kwargs):
-            pass
+            logger.debug("Unimplemented behavior : " + str(gargs))
         
         return unimplemented_function
+    
+    def reset_state(self):
+        self.car_is_ready = False
+        self.car_is_leaving = False
+
+        self.last_node = -1
+        self.last_time_last_node = -1
+        self.turn = 0
+        self.first_time_on_first_turn = 0
+        self.last_time_on_last_turn = 0
