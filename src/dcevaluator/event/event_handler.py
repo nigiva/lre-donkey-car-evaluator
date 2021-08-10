@@ -1,12 +1,14 @@
 from loguru import logger
+import time
 
 class EventHandler:
     def __init__(self):
         self.car_is_ready = False
+        self.car_is_driving = False
         self.car_is_leaving = False
 
         self.last_node = -1
-        self.last_time_last_node = -1
+        self.last_time_on_last_node = -1
         self.turn = 0
         self.first_time_on_first_turn = 0
         self.last_time_on_last_turn = 0
@@ -24,7 +26,7 @@ class EventHandler:
 
     def unimplemented_behavior(self, *gargs, **gkwargs):       
         def unimplemented_function(*args, **kwargs):
-            logger.debug("Unimplemented behavior : " + str(gargs))
+            logger.trace("Unimplemented behavior : " + str(gargs))
         
         return unimplemented_function
     
@@ -33,7 +35,13 @@ class EventHandler:
         self.car_is_leaving = False
 
         self.last_node = -1
-        self.last_time_last_node = -1
+        self.last_time_on_last_node = -1
         self.turn = 0
         self.first_time_on_first_turn = 0
         self.last_time_on_last_turn = 0
+    
+    def init_turn_stat(self):
+        t = time.time()
+        self.first_time_on_first_turn = t
+        self.last_time_on_last_turn = t
+        self.turn = 0

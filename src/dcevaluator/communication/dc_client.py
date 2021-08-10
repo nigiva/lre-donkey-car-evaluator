@@ -63,30 +63,31 @@ class DonkeyCarClient(BasicClient):
         active_node = request["activeNode"]
         current_turn = self.event_handler.turn
         
-        if abs(distance_center) > self.marge_before_car_leaving_road and not self.event_handler.car_is_leaving:
+        if self.marge_before_car_leaving_road < abs(distance_center) < 2 * self.marge_before_car_leaving_road and not self.event_handler.car_is_leaving:
             self.on_car_leaving_road(request)
-        if not self.event_handler.car_is_leaving:
+        if not self.event_handler.car_is_leaving and self.event_handler.car_is_driving:
             logger.debug("active_node : " + str(active_node) + " / distance_center (cte) : " + str(distance_center) + " / turn : " + str(current_turn))
+            logger.debug("last node : " + str(self.event_handler.last_node))
+            if self.event_handler.first_time_on_first_turn == 0 and active_node <= 1:
+                self.event_handler.init_turn_stat()
             if self.event_handler.last_node > self.node_after_start_detection_turn and active_node < self.event_handler.last_node:
                 logger.debug(str((self.event_handler.first_time_on_first_turn, self.event_handler.last_time_on_last_turn)))
                 if self.event_handler.first_time_on_first_turn == 0:
-                    t = time.time()
-                    self.event_handler.first_time_on_first_turn = t
-                    self.event_handler.last_time_on_last_turn = t
-                    self.event_handler.turn = 0
+                    self.event_handler.init_turn_stat()
                 elif time.time() - self.event_handler.last_time_on_last_turn > self.deltatime_min_between_turns:
                     logger.info("active_node : " + str(active_node) + " / distance_center (cte) : " + str(distance_center))
                     self.event_handler.turn += 1
                     self.each_turn(request)
                 self.event_handler.last_node = active_node
-                self.event_handler.last_time_last_node = time.time()
+                self.event_handler.last_time_on_last_node = time.time()
             if active_node > self.event_handler.last_node:
                 self.event_handler.last_node = active_node
-                self.event_handler.last_time_last_node = time.time()
+                self.event_handler.last_time_on_last_node = time.time()
                 self.each_node(request)
             
-            if self.event_handler.last_time_on_last_turn != -1 \
-                and time.time() - self.event_handler.last_time_last_node > self.deltatime_max_between_nodes:
+            if self.event_handler.car_is_driving and self.event_handler.last_time_on_last_node != -1 \
+                and time.time() - self.event_handler.last_time_on_last_node > self.deltatime_max_between_nodes:
+                logger.error(str((self.event_handler.car_is_driving, self.event_handler.last_time_on_last_node, time.time() - self.event_handler.last_time_on_last_node)))
                 self.on_timeout()
             
 
