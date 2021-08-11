@@ -7,22 +7,24 @@ from dcevaluator.hardware.joystick import JoystickController
 from dcevaluator.event.event_handler import EventHandler
 from dcevaluator.controller.manual_controller import ManualController
 from dcevaluator.evaluator.evaluator import Evaluator
+from dcevaluator.utils.utils import build_log_tag
 
 logger.remove()
-logger.add(sys.stdout, level="INFO")
+logger.add(sys.stdout, level="DEBUG")
 
 @begin.start
-def run(name = "No Name", host = "127.0.0.1", port = "9091"):
-    logger.info("Starting Donkey Car Evaluator")
-    logger.info("Evaluation Name : " + name)
-    logger.info("Evaluation Host : " + host)
-    logger.info("Evaluation Port : " + port)
+def run(evaluation_name = "No Name", host = "127.0.0.1", port = "9091", evaluation_scene = "roboracingleague_1"):
+    logger.info(build_log_tag("Donkey Car Evaluator", "BEGIN"))
+    logger.info(build_log_tag(evaluation_name=evaluation_name))
+    logger.info(build_log_tag(host=host))
+    logger.info(build_log_tag(port=port))
+    logger.info(build_log_tag(evaluation_scene=evaluation_scene))
 
     event_handler = EventHandler()
 
     client = DonkeyCarClient(event_handler, host, int(port))
     client.connect()
-    client.send_load_scene_request("roboracingleague_1")
+    client.send_load_scene_request(evaluation_scene)
 
     hardware = JoystickController()
     controller = ManualController(client, hardware, event_handler)

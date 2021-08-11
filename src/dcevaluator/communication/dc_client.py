@@ -4,6 +4,7 @@ from dcevaluator.communication.basic_client import BasicClient
 import json
 import re
 from dcevaluator.utils.utils import replace_float_notation
+from dcevaluator.utils.utils import build_log_tag
 
 class DonkeyCarClient(BasicClient):
 
@@ -100,14 +101,17 @@ class DonkeyCarClient(BasicClient):
         active_node = request["activeNode"]
         current_turn = self.event_handler.turn
 
-        # If the car goes too far off the road (limit < distance from the car) then consider it a "run off the road"
-        # Special case: When the car is reset, there may be a "distance" with an excessive value (above 100) for a short time. Therefore, a high detection limit of 2 times the low limit has been arbitrarily set.        
-        if self.margin_before_car_leaving_road < abs(distance_center) < 2 * self.margin_before_car_leaving_road and not self.event_handler.car_is_leaving:
+        # If the car goes too far off the road (limit < distance from the car) then consider it a "run off the road"      
+        # Weird bug : to be sure that it won't catch the same error twice, I check that it is not a false positive with this `self.event_handler.last_node != -1`
+        # It is a default value when a car is not driving
+        if not self.event_handler.car_is_leaving \
+            and self.event_handler.car_is_driving \
+            and self.event_handler.last_node != -1 \
+            and self.margin_before_car_leaving_road < abs(distance_center):
             self.on_car_leaving_road(request)
     
         if not self.event_handler.car_is_leaving and self.event_handler.car_is_driving:
-            logger.debug("active_node : " + str(active_node) + " / distance_center (cte) : " + str(distance_center) + " / turn : " + str(current_turn))
-            logger.debug("last node : " + str(self.event_handler.last_node))
+            logger.debug(build_log_tag(turn=current_turn, active_node=active_node, last_node=self.event_handler.last_node, distance_center=distance_center))
 
             # When resetting a car, its first active node can be either node=0 or node=112
             # In the case of node=0 or maximum 1, we want to initialize the timers used for the turn counter statistics.
@@ -118,7 +122,7 @@ class DonkeyCarClient(BasicClient):
             
             # If the car passes the "finish" line (count a turn)
             if self.event_handler.last_node > self.node_after_start_detection_turn and active_node < self.event_handler.last_node:
-                logger.debug("first_time_on_first_turn, last_time_on_last_turn = " + str((self.event_handler.first_time_on_first_turn, self.event_handler.last_time_on_last_turn)))
+                logger.debug(build_log_tag(first_time_on_first_turn=self.event_handler.first_time_on_first_turn, last_time_on_last_turn=self.event_handler.last_time_on_last_turn))
                 
                 # When resetting a car, its first active node can be either node=0 or node=112
                 # In the case of node=node_after_start_detection_turn or maximum MAX_NODE, we want to initialize the timers used for the turn counter statistics.
@@ -170,7 +174,7 @@ class DonkeyCarClient(BasicClient):
         self.event_handler.last_time_on_last_turn = time.time()
         delta = self.event_handler.last_time_on_last_turn - self.event_handler.first_time_on_first_turn
 
-        logger.success("Turn = " +  str(self.event_handler.turn) + " (deltatime = " + str(delta) + " sec)")
+        logger.success(build_log_tag("NEW TURN", turn=self.event_handler.turn, deltatime=delta))
         self.event_handler.each_turn(request)
 
     def each_node(self, request):
@@ -191,22 +195,20 @@ class DonkeyCarClient(BasicClient):
 
         :param request: a dict representing the request (telemetry)
         """
-
-        logger.error("active_node : " + str(request["activeNode"]) + " / distance_center (cte) : " + str(request["cte"]))
         logger.error("Car is leaving the road !")
+        logger.error(build_log_tag("ILLEGAL MOVE", message="Car is leaving the road", active_node=request["activeNode"], distance_center=request["cte"]))
 
         self.event_handler.on_car_leaving_road(request)
         self.event_handler.car_is_leaving = True
-        #self.send_reset_car_request()##TODO remove line
 
     def on_timeout(self):
         """
         At the timeout
         """
-        logger.error("Timeout to reach the next node ! (delay = " + str(self.deltatime_max_between_nodes) + " sec)")
+        logger.error("Timeout to reach the next node !")
+        logger.error(build_log_tag("TIMEOUT", message="Timeout to reach the next node", max_time = self.deltatime_max_between_nodes))
         self.event_handler.on_timeout()
         self.event_handler.car_is_leaving = True
-        #self.send_reset_car_request()##TODO remove line
         
 
     ####################

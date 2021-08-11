@@ -43,7 +43,10 @@ class ManualController:
                     self.event_handler.car_is_driving = False
                 
                 if self.hardware.get_exit_app_controller():
-                    self.client.send_quit_app_request()
-                    self.event_handler.car_is_driving = False
-                    self.running = False
+                    self.stop()
+    
+    def stop(self):
+        self.client.send_quit_app_request()
+        self.event_handler.car_is_driving = False
+        self.running = False
 

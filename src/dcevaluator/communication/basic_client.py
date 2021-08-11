@@ -4,6 +4,7 @@ import socket
 import select
 from threading import Thread
 import time
+from dcevaluator.utils.utils import build_log_tag
 
 class BasicClient:
     def __init__(self, host = "127.0.0.1", 
@@ -44,11 +45,12 @@ class BasicClient:
         try:
             #Try to connect to a server
             self.socket.connect((self.host, self.port))
-            logger.success("Client connected " + self.host + ":" + str(self.port))
+            logger.success(build_log_tag("CLIENT", "CONNECTED", host=self.host, port=self.port))
             self.connected = True
         except ConnectionRefusedError as e:
             self.connected = False
             logger.critical("Could not connect to server. Is it running? If you specified 'remote', then you must start it manually.")
+            logger.critical(build_log_tag("CLIENT", "NOT CONNECTED", message="Could not connect to server. Is it running? If you specified 'remote', then you must start it manually."))
             raise RuntimeError(e)
         
         #Launch the processing loop to interpret in real time the message sent from the server
@@ -63,6 +65,7 @@ class BasicClient:
         # Check if the client is connected to a server
         if not self.connected:
             logger.error("Is not currently connected to a server !")
+            logger.error(build_log_tag("CLIENT", "NOT CONNECTED", message="Is not currently connected to a server !"))
             return
 
         self.socket.setblocking(False)
@@ -94,6 +97,7 @@ class BasicClient:
 
         except ConnectionAbortedError:
             logger.warn("Socket connection aborted")
+            logger.warn(build_log_tag("CLIENT", "CONNECTION ABORTED", message="Socket connection aborted"))
             self.connected = False
 
     def write_message_with_socket(self, writable_socket):
@@ -161,6 +165,6 @@ class BasicClient:
         current_time = time.time()
         delta = current_time - self.first_frame_time
         if delta > self.deltatime_to_compute_fps:
-            logger.debug("FPS : " + str(self.nbr_frame_for_fps / delta))
+            logger.debug(build_log_tag("FPS", fps=(self.nbr_frame_for_fps / delta)))
             self.nbr_frame_for_fps = 0
             self.first_frame_time = time.time()
