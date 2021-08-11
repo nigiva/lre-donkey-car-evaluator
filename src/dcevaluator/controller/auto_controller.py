@@ -66,8 +66,8 @@ class AutoController:
                                                             gyro_z
                                                             )
                 # To show in realtime the input given to the Brain
-                cv2.imshow('view', cv2.cvtColor(img, cv2.COLOR_BGR2RGB))
-                cv2.waitKey(1)
+                ##cv2.imshow('view', cv2.cvtColor(img, cv2.COLOR_BGR2RGB))
+                ##cv2.waitKey(1)
 
                 # The AI takes so long to predict that we have to check if the state of the game has not changed before sending an instruction.
                 # In fact, sometimes when the car was reset, an instruction to control the car was sent slightly after the reset. 
