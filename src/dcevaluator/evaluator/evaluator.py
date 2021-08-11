@@ -13,6 +13,17 @@ class Evaluator:
                        delay_between_check_interval = 1/60,
                        delay_before_launch_car = 5
                        ):
+        """
+        Evaluator
+        
+        :param event_handler: Event Handler instance.
+        :param controller: Controller instance.
+        :param nbr_turns_limit: limit number of turns from which the evaluation is stopped (to avoid that the car drives to infinity).
+        :param nbr_epochs: number of epochs, i.e. the number of times the experiment is reproduced. This prevents us from evaluating once and having surprising results on a stroke of luck.
+        :param max_time_to_wait: waiting time for a controller ready to drive the car.
+        :param delay_between_check_interval: delay between each verification interval when waiting for a controller to be ready.
+        :param delay_before_launch_car: delay time after a scene reset before launching the car. This allows us to be sure that all components are loaded before starting the evaluation.
+        """
         self.event_handler = event_handler
         self.controller = controller
         self.nbr_turns_limit = nbr_turns_limit
@@ -45,17 +56,29 @@ class Evaluator:
         self.run()
 
     def run(self):
+        """
+        Wait some secondes and launch car
+        """
         logger.success(build_log_tag("EVALUATION", "BEGIN", epoch=self.current_epoch))
         time.sleep(self.delay_before_launch_car)
         self.event_handler.car_is_driving = True
     
     def when_car_is_leaving(self, *args, **kwargs):
+        """
+        When a car is leaving the road
+        """
         self.end_epoch()
 
     def when_timeout(self, *args, **kwargs):
+        """
+        When there is a timeout
+        """
         self.end_epoch()
 
     def end_epoch(self):
+        """
+        Process the end of a epoch
+        """
         self.end_evaluation_and_summary()
         self.current_epoch += 1
         if self.current_epoch > self.nbr_epochs:
@@ -66,11 +89,17 @@ class Evaluator:
             self.run()
     
     def check_limit_turn(self, *args, **kwargs):
+        """
+        Check if the current turn has reached the limit
+        """
         if self.event_handler.turn >= self.nbr_turns_limit:
-            logger.warning(build_log_tag("MAX NBR TURNS", message="Number of limit turns reached", nbr_turns_limit=self.nbr_turns_limit))
+            logger.warning(build_log_tag("LIMIT", message="Number of limit turns reached", nbr_turns_limit=self.nbr_turns_limit))
             self.end_epoch()
 
     def end_evaluation_and_summary(self):
+        """
+        Log the end of evaluation and print a summary
+        """
         logger.success(build_log_tag("EVALUATION", "END", epoch=self.current_epoch))
         logger.success(build_log_tag("SUMMARY", epoch=self.current_epoch, 
                                                 turn=self.event_handler.turn,
@@ -81,5 +110,8 @@ class Evaluator:
                                                 ))
     
     def stop(self):
+        """
+        Stop the evaluator
+        """
         self.controller.stop()
         logger.info(build_log_tag("Donkey Car Evaluator", "END"))        

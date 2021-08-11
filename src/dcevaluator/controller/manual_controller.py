@@ -46,6 +46,9 @@ class ManualController:
                     self.stop()
     
     def stop(self):
+        """
+        Stop the controller
+        """
         self.client.send_quit_app_request()
         self.event_handler.car_is_driving = False
         self.running = False

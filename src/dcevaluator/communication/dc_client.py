@@ -41,6 +41,11 @@ class DonkeyCarClient(BasicClient):
         self.deltatime_max_between_nodes = deltatime_max_between_nodes
 
     def on_request_receive(self, request_string):
+        """
+        When a request is received
+
+        :param request_string: The request as a string
+        """
         super().on_request_receive(request_string)
 
         request = json.loads(replace_float_notation(request_string))
