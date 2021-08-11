@@ -22,9 +22,11 @@ def run(name = "No Name", host = "127.0.0.1", port = "9091"):
 
     client = DonkeyCarClient(event_handler, host, int(port))
     client.connect()
+    client.send_load_scene_request("roboracingleague_1")
 
     hardware = JoystickController()
     controller = ManualController(client, hardware, event_handler)
+    
     evaluator = Evaluator(event_handler, controller)
 
 
