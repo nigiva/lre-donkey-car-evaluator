@@ -140,6 +140,7 @@ class BasicClient:
     def send_message(self, message):
         """
         Send a message 
+        
         Add `\n` at the end of the message and add all to the writable buffer.
 
         :param message: message to send
@@ -149,7 +150,14 @@ class BasicClient:
         self.writable_buffer = self.writable_buffer + message
     
     def send_now(self, message):
+        """
+        Send the message now without waiting for the next buffer push
+
+        :param message: the message to send
+        """
+        logger.trace("Sending NOW : " + str(message))
         self.socket.send(message.encode("utf-8"))
+        logger.trace("Message sent NOW successfully : " + str(message))
 
             
     def on_request_receive(self, request_string):
@@ -168,3 +176,12 @@ class BasicClient:
             logger.debug(build_log_tag("FPS", fps=(self.nbr_frame_for_fps / delta)))
             self.nbr_frame_for_fps = 0
             self.first_frame_time = time.time()
+    
+    def reset_buffer(self):
+        """
+        Reset the readable and writable buffers to avoid their sending
+
+        NOTE : Thread is not lock
+        """
+        self.readable_buffer = ""
+        self.writable_buffer = ""

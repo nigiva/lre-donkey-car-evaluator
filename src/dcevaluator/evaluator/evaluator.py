@@ -59,6 +59,7 @@ class Evaluator:
         """
         Wait some secondes and launch car
         """
+        self.event_handler.car_is_driving = False
         logger.success(build_log_tag("EVALUATION", "BEGIN", epoch=self.current_epoch))
         time.sleep(self.delay_before_launch_car)
         self.event_handler.car_is_driving = True

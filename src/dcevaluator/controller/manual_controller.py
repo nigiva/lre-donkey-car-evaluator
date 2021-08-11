@@ -2,13 +2,6 @@ from threading import Thread
 import time
 from dcevaluator.utils.utils import launch_func_in_thread
 
-from PIL import Image
-import base64
-from io import BytesIO
-import collections
-import numpy as np
-import cv2
-
 class ManualController:
     def __init__(self, client, hardware, event_handler, delay_before_check = 0.016):
         """
@@ -26,14 +19,9 @@ class ManualController:
         self.delay_before_check = delay_before_check
 
         self.running = True
-        self.deque = collections.deque(maxlen = 4)
-        self.event_handler.on_telemetry = launch_func_in_thread(self.on_telemetry)
 
         self.controller_thread = Thread(target=self.loop)
-        self.controller_thread.start()
-
-        Thread(target=self.loop_decode).start()
-        
+        self.controller_thread.start()        
 
     def loop(self):
         """
@@ -57,20 +45,6 @@ class ManualController:
                 
                 if self.hardware.get_exit_app_controller():
                     self.stop()
-    
-    def loop_decode(self):
-        while self.running:
-            if len(self.deque) > 0: 
-                base64_img = self.deque.pop()
-                byte_string_img = base64.b64decode(base64_img)
-                byte_img = BytesIO(byte_string_img)
-                img = Image.open(byte_img)
-                cv2.imshow('view', cv2.cvtColor(np.array(img), cv2.COLOR_BGR2RGB))
-                cv2.waitKey(1)
-
-    def on_telemetry(self, request):
-        base64_img = request["image"]
-        self.deque.append(base64_img)
 
     def stop(self):
         """

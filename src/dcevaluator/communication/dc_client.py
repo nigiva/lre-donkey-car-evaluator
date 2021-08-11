@@ -317,13 +317,17 @@ class DonkeyCarClient(BasicClient):
     
     def send_reset_car_request(self):
         """
-        Return the car to the start point.
+        Return the car to the start point
+
+        This command will send the request immediatly and reset the buffers of the client.
         """
         request = dict()
         request["msg_type"] = "reset_car"
         self.event_handler.reset_state()
         self.event_handler.car_is_ready = True
-        self.send_message(json.dumps(request))
+        # It is not `send_message` because we don't want to wait for the next buffer read to give the request
+        self.send_now(json.dumps(request))
+        self.reset_buffer()
     
     def send_node_position_request(self, index):
         """
@@ -350,9 +354,14 @@ class DonkeyCarClient(BasicClient):
         """
         request = dict()
         request["msg_type"] = "quit_app"
+        # It is not `send_message` because we don't want to wait for the next buffer read to give the request
         self.send_now(json.dumps(request))
+        self.reset_buffer()
         self.on_quit_app()
         self.stop()
     
     def stop(self):
+        """
+        Stop the loop in the client
+        """
         self.connected = False
