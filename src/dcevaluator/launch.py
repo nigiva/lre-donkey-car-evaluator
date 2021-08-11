@@ -10,7 +10,7 @@ from dcevaluator.evaluator.evaluator import Evaluator
 from dcevaluator.utils.utils import build_log_tag
 
 logger.remove()
-logger.add(sys.stdout, level="DEBUG")
+logger.add(sys.stdout, level="INFO")
 
 @begin.start
 def run(evaluation_name = "No Name", host = "127.0.0.1", port = "9091", evaluation_scene = "roboracingleague_1"):

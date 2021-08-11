@@ -9,13 +9,13 @@ class Evaluator:
                        controller, 
                        nbr_turns_limit = 10,
                        nbr_epochs = 10,
-                       max_time_to_wait = 10 * 60,
+                       max_time_to_wait = 10,
                        delay_between_check_interval = 1/60,
                        delay_before_launch_car = 5
                        ):
         """
         Evaluator
-        
+
         :param event_handler: Event Handler instance.
         :param controller: Controller instance.
         :param nbr_turns_limit: limit number of turns from which the evaluation is stopped (to avoid that the car drives to infinity).
@@ -101,7 +101,7 @@ class Evaluator:
         Log the end of evaluation and print a summary
         """
         logger.success(build_log_tag("EVALUATION", "END", epoch=self.current_epoch))
-        logger.success(build_log_tag("SUMMARY", epoch=self.current_epoch, 
+        logger.info(build_log_tag("SUMMARY", epoch=self.current_epoch, 
                                                 turn=self.event_handler.turn,
                                                 last_node=self.event_handler.last_node,
                                                 first_time_on_first_turn=self.event_handler.first_time_on_first_turn,
