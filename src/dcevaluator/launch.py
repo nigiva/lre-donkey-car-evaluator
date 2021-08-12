@@ -12,6 +12,7 @@ from dcevaluator.utils.utils import build_log_tag
 
 logger.remove()
 logger.add(sys.stdout, level="INFO")
+#logger.add("last_eval.log", level="TRACE")
 
 @begin.start
 def run(model_path,
@@ -33,7 +34,8 @@ def run(model_path,
         deltatime_min_between_turns = "10.0",
         node_after_start_detection_turn = "105",
         deltatime_max_between_nodes = "5",
-        
+        deltatime_max_after_driving_to_reach_first_node = 10,
+
         buffer_requests_size = "4",
         ):
     """
@@ -67,14 +69,14 @@ def run(model_path,
     :param deltatime_min_between_turns: minimum time interval between two turns from which we can count a turn (incrementation)
     :param node_after_start_detection_turn: node from which we can possibly count a turn. (To avoid false positives on the rest of the road)
     :param deltatime_max_between_nodes: Maximum time interval to travel the distance between two nodes. If the vehicle takes too long, it is probably stuck somewhere but not far enough off the road to be considered 'off road'.
-
+    :param deltatime_max_after_driving_to_reach_first_node: Maximum time interval for the car to reach a node if its default settings have not been changed when the car is launched. This is the case when the car moves before the real start and the evaluator has not captured this departure because the simulator does not respond.
 
     CONTROLLER
     ----------
     :param buffer_requests_size: Size of buffer of requests
 
     """
-    
+
     logger.info(build_log_tag("Donkey Car Evaluator", "BEGIN"))
     logger.info(build_log_tag(evaluation_name=evaluation_name))
     logger.info(build_log_tag(host=host))
@@ -93,6 +95,7 @@ def run(model_path,
     logger.debug(build_log_tag(deltatime_min_between_turns=deltatime_min_between_turns))
     logger.debug(build_log_tag(node_after_start_detection_turn=node_after_start_detection_turn))
     logger.debug(build_log_tag(deltatime_max_between_nodes=deltatime_max_between_nodes))
+    logger.debug(build_log_tag(deltatime_max_after_driving_to_reach_first_node=deltatime_max_after_driving_to_reach_first_node))
     logger.debug(build_log_tag(buffer_requests_size=buffer_requests_size))
 
     event_handler = EventHandler()
@@ -104,7 +107,8 @@ def run(model_path,
                             margin_before_car_leaving_road=float(margin_before_car_leaving_road),
                             deltatime_min_between_turns=float(deltatime_min_between_turns), 
                             node_after_start_detection_turn=int(node_after_start_detection_turn), 
-                            deltatime_max_between_nodes=int(deltatime_max_between_nodes)
+                            deltatime_max_between_nodes=float(deltatime_max_between_nodes),
+                            deltatime_max_after_driving_to_reach_first_node=float(deltatime_max_after_driving_to_reach_first_node)
                             )
     client.connect()
     client.send_load_scene_request(evaluation_scene)

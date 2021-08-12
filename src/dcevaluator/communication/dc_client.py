@@ -17,7 +17,8 @@ class DonkeyCarClient(BasicClient):
                        margin_before_car_leaving_road = 6.0,
                        deltatime_min_between_turns = 10.0,
                        node_after_start_detection_turn = 105,
-                       deltatime_max_between_nodes = 5
+                       deltatime_max_between_nodes = 5,
+                       deltatime_max_after_driving_to_reach_first_node = 10
                        ):
         """
         Donkey Car Client
@@ -32,6 +33,7 @@ class DonkeyCarClient(BasicClient):
         :param deltatime_min_between_turns: minimum time interval between two turns from which we can count a turn (incrementation)
         :param node_after_start_detection_turn: node from which we can possibly count a turn. (To avoid false positives on the rest of the road)
         :param deltatime_max_between_nodes: Maximum time interval to travel the distance between two nodes. If the vehicle takes too long, it is probably stuck somewhere but not far enough off the road to be considered 'off road'.
+        :param deltatime_max_after_driving_to_reach_first_node: Maximum time interval for the car to reach a node if its default settings have not been changed when the car is launched. This is the case when the car moves before the real start and the evaluator has not captured this departure because the simulator does not respond.
         """
         super().__init__(host, port, poll_socket_sleep_sec, buffer_message_size_read, deltatime_to_compute_fps)
         self.event_handler = event_handler
@@ -39,6 +41,7 @@ class DonkeyCarClient(BasicClient):
         self.deltatime_min_between_turns = deltatime_min_between_turns
         self.node_after_start_detection_turn = node_after_start_detection_turn
         self.deltatime_max_between_nodes = deltatime_max_between_nodes
+        self.deltatime_max_after_driving_to_reach_first_node = deltatime_max_after_driving_to_reach_first_node
 
     def on_request_receive(self, request_string):
         """
@@ -154,6 +157,18 @@ class DonkeyCarClient(BasicClient):
                 and time.time() - self.event_handler.last_time_on_last_node > self.deltatime_max_between_nodes:
                 
                 self.on_timeout()
+            
+            # If the default values have not been changed (the car goes out of the field before the start of the race but the evaluator does not catch this event) 
+            # then when it is allowed to run, the vehicle has 10 seconds to reach at least one node.
+            if self.event_handler.car_is_driving \
+                and self.event_handler.last_time_on_last_node == -1 :
+                
+                if self.event_handler.first_time_when_car_is_driving == -1:
+                    self.event_handler.first_time_when_car_is_driving = time.time()
+                elif time.time() - self.event_handler.first_time_when_car_is_driving > self.deltatime_max_after_driving_to_reach_first_node:
+                    self.on_timeout()
+            
+
             
 
     def on_exit_scene(self):

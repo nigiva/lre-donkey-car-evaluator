@@ -12,6 +12,7 @@ class EventHandler:
         self.last_time_on_last_node = -1
         self.turn = 0
         self.first_time_on_first_turn = 0
+        self.first_time_when_car_is_driving = -1
         self.last_time_on_last_turn = 0
         
         self.on_scene_selection_ready = self.unimplemented_behavior("on_scene_selection_ready")
@@ -47,6 +48,7 @@ class EventHandler:
         self.last_time_on_last_node = -1
         self.turn = 0
         self.first_time_on_first_turn = 0
+        self.first_time_when_car_is_driving = -1
         self.last_time_on_last_turn = 0
     
     def init_turn_stat(self):
