@@ -61,7 +61,9 @@ class Evaluator:
         """
         self.event_handler.car_is_driving = False
         logger.success(build_log_tag("EVALUATION", "BEGIN", epoch=self.current_epoch))
+        logger.info(build_log_tag("WAITING", message="Waiting for the complete loading of all components", delay_before_launch_car=self.delay_before_launch_car))
         time.sleep(self.delay_before_launch_car)
+        logger.info(build_log_tag("LET'S GO", message="Launch the car !"))
         self.event_handler.car_is_driving = True
     
     def when_car_is_leaving(self, *args, **kwargs):
