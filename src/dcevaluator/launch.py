@@ -11,8 +11,8 @@ from dcevaluator.controller.brain import Brain
 from dcevaluator.utils.utils import build_log_tag
 
 logger.remove()
-logger.add(sys.stdout, level="INFO")
-#logger.add("last_eval.log", level="TRACE")
+logger.add(sys.stdout, level="DEBUG")
+#logger.add("last_eval.log", level="DEBUG")
 
 @begin.start
 def run(model_path,

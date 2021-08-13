@@ -37,11 +37,8 @@ class AutoController:
         Process request from the hardware
         """
         self.event_handler.car_controller_is_ready = True
-        while self.running:
-            logger.debug(build_log_tag(car_controller_is_ready=self.event_handler.car_controller_is_ready, car_is_driving=self.event_handler.car_is_driving))
-            
+        while self.running:            
             if self.event_handler.car_is_ready and self.event_handler.car_is_driving and len(self.deque) > 0:
-                logger.debug(">>> Predict Now")
                 request = self.deque.pop()
                 base64_img = request["image"]
                 byte_string_img = base64.b64decode(base64_img)
