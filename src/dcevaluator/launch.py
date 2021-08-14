@@ -87,6 +87,7 @@ def run(model_path,
     logger.info(build_log_tag(evaluation_scene=evaluation_scene))
     logger.info(build_log_tag(nbr_turns_limit=nbr_turns_limit))
     logger.info(build_log_tag(nbr_epochs=nbr_epochs))
+    logger.info(build_log_tag(log_path=log_path))
 
     logger.debug(build_log_tag(max_time_to_wait=max_time_to_wait))
     logger.debug(build_log_tag(delay_between_check_interval=delay_between_check_interval))
