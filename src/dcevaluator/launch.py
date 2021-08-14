@@ -11,8 +11,7 @@ from dcevaluator.controller.brain import Brain
 from dcevaluator.utils.utils import build_log_tag
 
 logger.remove()
-logger.add(sys.stdout, level="DEBUG")
-#logger.add("last_eval.log", level="DEBUG")
+logger.add(sys.stdout, level="INFO")
 
 @begin.start
 def run(model_path,
@@ -20,6 +19,7 @@ def run(model_path,
         host = "127.0.0.1", 
         port = "9091",
         evaluation_scene = "roboracingleague_1",
+        log_path = "last_eval.log",
 
         nbr_turns_limit = "10",
         nbr_epochs = "10",
@@ -49,6 +49,7 @@ def run(model_path,
     :param host: host to connect to a server like ip address with string
     :param port: port to connect to a server with int
     :param evaluation_scene: scene to load before the evaluation
+    :log_path: the path of the generated log file
 
 
     EVALUATOR
@@ -76,6 +77,8 @@ def run(model_path,
     :param buffer_requests_size: Size of buffer of requests
 
     """
+
+    logger.add(log_path, level="DEBUG")
 
     logger.info(build_log_tag("Donkey Car Evaluator", "BEGIN"))
     logger.info(build_log_tag(evaluation_name=evaluation_name))
