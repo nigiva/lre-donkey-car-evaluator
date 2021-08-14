@@ -1,6 +1,7 @@
 import begin
 import sys
 from loguru import logger
+import time
 
 from dcevaluator.communication.dc_client import DonkeyCarClient
 from dcevaluator.hardware.joystick import JoystickController
@@ -115,6 +116,11 @@ def run(model_path,
                             deltatime_max_after_driving_to_reach_first_node=float(deltatime_max_after_driving_to_reach_first_node)
                             )
     client.connect()
+    logger.info(build_log_tag("RESET SCENE", "WAITING...", delay=10))
+    client.send_exit_scene_request()
+    # let some time for the simulator
+    time.sleep(10)
+    logger.info(build_log_tag("RESET SCENE", "DONE"))
     client.send_load_scene_request(evaluation_scene)
 
     # Mode Manual

@@ -84,6 +84,7 @@ class AutoController:
         """
         Stop the controller
         """
-        self.client.send_quit_app_request()
+        self.client.send_exit_scene_request()
         self.event_handler.car_is_driving = False
         self.running = False
+        self.client.stop()

@@ -360,7 +360,8 @@ class DonkeyCarClient(BasicClient):
         """
         request = dict()
         request["msg_type"] = "exit_scene"
-        self.send_message(json.dumps(request))
+        # It is not `send_message` because we don't want to wait for the next buffer read to give the request
+        self.send_now(json.dumps(request))
         self.on_exit_scene()
 
     def send_quit_app_request(self):
