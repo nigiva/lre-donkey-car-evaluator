@@ -16,7 +16,7 @@ and displaying the results obtained (number of laps, time taken, off road, timou
 Prerequisite
 ============
 This program has been developed for **Python 3.9**.
-The installation uses **PyPi**.
+The installation uses **PyPi** and **virtual Env (venv)**.
 
 Installation
 ============
@@ -43,7 +43,7 @@ Parameters
     :--host: host to connect to a server like ip address with string
     :--port: port to connect to a server with int
     :--evaluation-scene: scene to load before the evaluation
-    :log-path: the path of the generated log file
+    :--log-path: the path of the generated log file
 
 
 EVALUATOR
