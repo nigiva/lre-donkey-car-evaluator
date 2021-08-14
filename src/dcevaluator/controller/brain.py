@@ -63,5 +63,5 @@ class Brain:
         angle = output['angle'][0][0] #TODO Change to a better shape
         angle_satured = 0.4 if abs(angle) > 0.4 else abs(angle)
         throttle = 0.6 - angle_satured
-        return (0, 0, 0)#TODO Change to a better shape
+        return (angle, throttle, 0)#TODO Change to a better shape
     
