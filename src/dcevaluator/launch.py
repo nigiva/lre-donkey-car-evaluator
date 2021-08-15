@@ -82,6 +82,7 @@ def run(model_path,
     logger.add(log_path, level="DEBUG")
 
     logger.info(build_log_tag("Donkey Car Evaluator", "BEGIN"))
+    logger.info(build_log_tag(model_path=model_path))
     logger.info(build_log_tag(evaluation_name=evaluation_name))
     logger.info(build_log_tag(host=host))
     logger.info(build_log_tag(port=port))
