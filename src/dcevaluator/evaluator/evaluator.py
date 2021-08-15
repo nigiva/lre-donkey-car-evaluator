@@ -63,8 +63,14 @@ class Evaluator:
         logger.success(build_log_tag("EVALUATION", "BEGIN", epoch=self.current_epoch))
         logger.info(build_log_tag("WAITING", message="Waiting for the complete loading of all components", delay_before_launch_car=self.delay_before_launch_car))
         time.sleep(self.delay_before_launch_car)
-        logger.info(build_log_tag("LET'S GO", message="Launch the car !"))
+        # This reset is important at this location.
+        # If it is done too early (i.e. at the time of sending the reset request) and if there is a lot of latency, then this reset may be corrupted by the old state of the car.
+        # Therefore, it is important to wait a little while for the simulator to load and then reset when the car state is stable in the simulator.
+        self.event_handler.reset_state()
+        self.event_handler.car_is_ready = True
         self.event_handler.car_is_driving = True
+        logger.debug(build_log_tag("RESET STATE", car_is_ready=self.event_handler.car_is_ready, car_is_driving=self.event_handler.car_is_driving))
+        logger.info(build_log_tag("LET'S GO", message="Launch the car !"))
     
     def when_car_is_leaving(self, *args, **kwargs):
         """

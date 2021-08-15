@@ -339,7 +339,6 @@ class DonkeyCarClient(BasicClient):
         request = dict()
         request["msg_type"] = "reset_car"
         self.event_handler.reset_state()
-        self.event_handler.car_is_ready = True
         # It is not `send_message` because we don't want to wait for the next buffer read to give the request
         self.send_now(json.dumps(request))
         self.reset_buffer()
