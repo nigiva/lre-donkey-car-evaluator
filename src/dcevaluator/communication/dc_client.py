@@ -190,6 +190,9 @@ class DonkeyCarClient(BasicClient):
         :param request: a dict representing the request (telemetry)
         """
         self.event_handler.turn += 1
+        
+        # Some time, when car reachs the limite of turns, the last_node doesn't have enough time to be refreshed and keep its last value, i.e. 112 instead of 0
+        self.event_handler.last_node = 0
 
         self.event_handler.last_time_on_last_turn = time.time()
         delta = self.event_handler.last_time_on_last_turn - self.event_handler.first_time_on_first_turn
