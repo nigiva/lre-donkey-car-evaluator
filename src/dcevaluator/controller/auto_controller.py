@@ -40,28 +40,7 @@ class AutoController:
         while self.running:            
             if self.event_handler.car_is_ready and self.event_handler.car_is_driving and len(self.deque) > 0:
                 request = self.deque.pop()
-                base64_img = request["image"]
-                byte_string_img = base64.b64decode(base64_img)
-                byte_img = BytesIO(byte_string_img)
-                img = np.array(Image.open(byte_img))
-
-                speed = request["speed"]
-                accel_x = request["accel_x"]
-                accel_y = request["accel_y"]
-                accel_z = request["accel_z"]
-                gyro_x = request["gyro_x"]
-                gyro_y = request["gyro_y"]
-                gyro_z = request["gyro_z"]
-
-                angle, throttle, brake = self.brain.predict(img, 
-                                                            speed,
-                                                            accel_x, 
-                                                            accel_y, 
-                                                            accel_z, 
-                                                            gyro_x, 
-                                                            gyro_y, 
-                                                            gyro_z
-                                                            )
+                angle, throttle, brake = self.brain.predict(request)
                 # To show in realtime the input given to the Brain
                 ##cv2.imshow('view', cv2.cvtColor(img, cv2.COLOR_BGR2RGB))
                 ##cv2.waitKey(1)

@@ -8,7 +8,7 @@ from dcevaluator.hardware.joystick import JoystickController
 from dcevaluator.event.event_handler import EventHandler
 from dcevaluator.controller.auto_controller import AutoController
 from dcevaluator.evaluator.evaluator import Evaluator
-from dcevaluator.controller.brain import Brain
+from dcevaluator.controller.model_wrapper import DCModelWrapper
 from dcevaluator.utils.utils import build_log_tag
 
 logger.remove()
@@ -129,7 +129,8 @@ def run(model_path,
     ##controller = ManualController(client, hardware, event_handler)
 
     # Mode Auto
-    brain = Brain(model_path)
+    brain = DCModelWrapper.load(model_path)
+
     controller = AutoController(client, brain, event_handler, buffer_requests_size=int(buffer_requests_size))
 
     evaluator = Evaluator(event_handler, controller, nbr_turns_limit=int(nbr_turns_limit), 
